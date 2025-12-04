@@ -66,6 +66,7 @@ module "blog-alb" {
       port     = 80
       protocol = "HTTP"
     }
+  }
 
   tags = {
     Environment = "dev"
