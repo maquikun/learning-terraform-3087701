@@ -3,7 +3,7 @@ data "aws_ami" "app_ami" {
 
   filter {
     name   = "name"
-    values = ["bitnami-tomcat-*-x86_64-hvm-ebs-nami"]
+    values = [var.ami_filter.name]
   }
 
   filter {
@@ -11,22 +11,22 @@ data "aws_ami" "app_ami" {
     values = ["hvm"]
   }
 
-  owners = ["979382823631"] # Bitnami
+  owners = [var.ami_filter.owner]
 }
 
 
 module "blog_vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "dev"
-  cidr = "10.0.0.0/16"
+  name = var.environment.name
+  cidr = "${var.environment.network_prefix}.0.0/16"
 
   azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  public_subnets  = ["${var.environment.network_prefix}.101.0/24", "${var.environment.network_prefix}.102.0/24", "${var.environment.network_prefix}.103.0/24"]
 
   tags = {
     Terraform = "true"
-    Environment = "dev"
+    Environment = var.environment.name
   }
 }
 
@@ -53,7 +53,7 @@ module "blog-alb" {
 
   target_groups = {
     ex-instance = {
-      name_prefix      = "blog"
+      name_prefix      = "${var.environment.name}"
       protocol         = "HTTP"
       port             = 80
       target_type      = "instance"
@@ -73,14 +73,14 @@ module "blog-alb" {
   }
 
   tags = {
-    Environment = "dev"
+    Environment = var.environment.name
   }
 }
 
 module "blog_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.3.1"
-  name = "blog"
+  name = "${var.environment.name}-blog"
 
   vpc_id = module.blog_vpc.vpc_id
 
